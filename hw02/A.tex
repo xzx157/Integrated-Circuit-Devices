@@ -1,0 +1,96 @@
+\documentclass[11pt, a4paper, UTF8]{article}
+\usepackage{ctex} % 中文支持
+\usepackage{amsmath, amssymb, amsfonts} % 数学公式
+\usepackage{graphicx} % 插入图片
+\usepackage{geometry} % 页面布局
+\usepackage{booktabs} % 表格样式
+\usepackage{hyperref} % 超链接
+\usepackage{listings} % 代码块展示
+
+\geometry{left=2.5cm, right=2.5cm, top=3cm, bottom=3cm}
+
+\title{实验报告：平面 MOSFET 仿真与特性研究}
+\author{姓名：\underline{\hspace{3cm}} \quad 学号：\underline{\hspace{3cm}}}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\section{实验背景与目的}
+平面 MOSFET 是半导体工业过去五十年的核心支柱。本实验旨在通过 GTS TCAD 仿真平台，深入探究 65nm 及以下节点 NMOS 器件的电学特性，掌握短沟道效应（SCE）、界面缺陷及寄生电阻对器件性能的影响，并学习利用 DOE 工具进行器件优化设计。
+
+\section{任务 1：65nm 平面 NMOS 的 IV 特性仿真}
+\subsection{实验原理}
+通过求解漂移-扩散模型（Drift-Diffusion）获取器件的转移特性曲线。利用 Python 脚本进行电流归一化（使线性区关态电流达到固定值），通过平移曲线（等效于调整功函数）来确保不同器件在公平基准下对比性能指标。
+
+\subsection{仿真步骤}
+\begin{enumerate}
+    \item 在 GTS 中导入 ``NMOS 65nm 2D simple'' 模板。
+    \item 设置栅压 $V_G$ 扫描范围为 $[-0.2, 1.2]$ V，漏压 $V_D$ 分别取 $0.05$ V 和 $1.0$ V。
+    \item 统一设置栅极功函数为 $-0.56$ eV。
+    \item 运行 Minimos 仿真并保存载流子浓度、电势及能带分布。
+    \item 导入 ``FET Current Normalization'' 和 ``FET Parameter Extract'' 脚本提取 $V_{th}, SS, I_{on}, DIBL$ 等指标。
+\end{enumerate}
+
+\subsection{预期结果}
+得到标准的转移特性曲线（对数与线性坐标），并能从 1D Cut 视图中观察到沟道反型层载流子浓度的变化。
+
+\section{任务 2：短沟道效应（SCE）分析}
+\subsection{实验原理}
+随着栅长（$L_g$）缩短，漏端对沟道电势的影响增强，导致栅极控制力下降。表现为阈值电压随栅长减小而下降（$V_{th}$ Roll-off）、亚阈值摆幅（SS）增大以及漏极诱导势垒降低（DIBL）。
+
+\subsection{仿真步骤}
+\begin{enumerate}
+    \item 使用 DOE 工具构建自动化流程。
+    \item 将栅长设置为 100nm, 65nm 和 45nm 进行对比仿真。
+    \item 禁用归一化步骤以提取真实的 $V_{th}$ Roll-off（相较于 100nm 基准）。
+\end{enumerate}
+
+\subsection{预期结果}
+观察到随着 $L_g$ 缩短，$V_{th}$ 显著漂移，且饱和状态下的 $I_{on}$ 和 DIBL 指标恶化。
+
+\section{任务 3：45nm 平面 NMOS 的优化设计}
+\subsection{实验原理}
+在缩减尺寸的同时，通过增加栅氧层电容（减小 $T_{ox}$）或调整沟道掺杂浓度（如 Halo 掺杂或倒掺杂）来增强栅控能力，抑制 SCE。
+
+\subsection{设计要求与约束}
+\begin{itemize}
+    \item 指标：$SS < 90$ mV/dec, $I_{on} > 9.5 \times 10^{-4}$ A/um, $DIBL < 90$ mV/V。
+    \item 约束：$T_{ox}$ 需在 $[0.8, 2]$ nm 区间内，仅限调整栅氧和掺杂。
+\end{itemize}
+
+\subsection{仿真与分析}
+针对 45nm 不达标的器件，通过减小 $T_{ox}$ 提升跨导，并调整沟道表层及背景掺杂，直至各项指标符合工程博弈的最优解。
+
+\section{任务 4：AC 仿真与界面缺陷研究}
+\subsection{实验原理}
+Si/SiO$_2$ 界面存在悬挂键（缺陷），会捕获或释放载流子。在 AC 仿真中，缺陷电荷会随偏压变化，产生额外的陷阱电容并叠加在几何电容上，导致 CV 曲线畸变。
+
+\subsection{仿真步骤}
+\begin{enumerate}
+    \item 对 65nm 器件进行频率为 $10^4$ Hz 的 AC 仿真，扫描电压 $[-2, 2]$ V。
+    \item 在界面处添加单一能级或高斯分布的类施主/类受主缺陷，并开启 SRH 模型。
+    \item 对比有无缺陷时的 CV 曲线及转移特性曲线。
+\end{enumerate}
+
+\subsection{预期结果}
+当费米能级扫过缺陷能级时，CV 曲线会出现明显的电容峰值或抬升，同时转移特性的 $V_{th}$ 发生偏移。
+
+\section{任务 5：源漏串联寄生电阻的影响}
+\subsection{实验原理}
+在亚 100nm 节点，沟道电阻变小，源漏区的串联电阻 $R_s, R_d$ 变得不可忽视。$R_s$ 不仅会产生压降降低有效 $V_{DS}$，还会通过源端电势抬高产生背栅效应，进一步削弱栅控能力。
+
+\subsection{仿真步骤}
+\begin{enumerate}
+    \item 在 Minimos 中为源/漏电极设置 Ohmic 电阻（$[0, 1000] \Omega \cdot \mu m$）。
+    \item 使用 DOE 扫描 $R_s$ 和 $R_d$ 的变化，观察其对开态电流的影响。
+\end{enumerate}
+
+\subsection{预期结果}
+随着串联电阻增大，开态电流 $I_{on}$ 明显下降。分析将表明 $R_s$ 对器件性能的负面影响通常大于 $R_d$。
+
+\section{实验总结}
+通过本次仿真实验，深入理解了平面 MOSFET 的物理极限及优化手段，掌握了 TCAD 工具在器件设计中的核心应用。
+
+\end{document}
