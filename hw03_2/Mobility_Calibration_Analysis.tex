@@ -1,0 +1,73 @@
+
+\documentclass[11pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage{xeCJK}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{geometry}
+\usepackage{booktabs}
+\usepackage{xcolor}
+\usepackage{titlesec}
+\usepackage{enumitem}
+
+\geometry{left=2.5cm,right=2.5cm,top=3cm,bottom=3cm}
+\titleformat{\section}{\large\bfseries\color{blue!70!black}}{\thesection}{1em}{}
+
+\begin{document}
+
+\title{\textbf{实验报告思考题：Split CV 迁移率校准中的短沟道效应分析}}
+\author{徐子祥}
+\date{\today}
+\maketitle
+
+\section{Split CV 方法的基本原理回顾}
+
+在迁移率提取中，Split CV 的核心公式为：
+\begin{equation}
+\mu(V_{gs}) = \frac{L_{eff}}{W_{eff}} \frac{I_d(V_{gs})}{V_{ds} \cdot Q_{inv}(V_{gs})}
+\end{equation}
+其中，反型层电荷密度 $Q_{inv}$ 是通过对栅-沟道电容 $C_{gc}$ 积分得到的：
+\begin{equation}
+Q_{inv}(V_{gs}) = \int_{-\infty}^{V_{gs}} C_{gc}(V_g) dV_g
+\end{equation}
+对于长沟道器件，该方法非常稳健。然而，当器件尺寸缩减至短沟道（Short Channel）量级时，一系列物理效应会导致迁移率校准出现偏差。
+
+\section{短沟道器件对迁移率校准的具体影响}
+
+\subsection{1. 有效沟道长度 $L_{eff}$ 的提取偏差}
+在短沟道器件中，源/漏扩散区向沟道内部延伸（Lateral Diffusion），导致实际电学长度 $L_{eff}$ 显著小于掩模长度 $L_{mask}$。
+\begin{itemize}
+    \item \textbf{影响}：若直接使用 $L_{mask}$ 进行计算，公式中的系数项偏大，会导致提取出的物理迁移率出现比例上的错误。
+    \item \textbf{动态性}：在强反型区，由于漏端耗尽区电场的影响，有效沟道长度会随 $V_{ds}$ 或 $V_{gs}$ 略微改变（沟道长度调制效应），使得 $\mu$ 的提取不再是常数系数。
+\end{itemize}
+
+\subsection{2. 寄生电阻 $R_{sd}$ 的屏蔽效应 (Masking Effect)}
+这是短沟道器件中最严重的问题。总电阻 $R_{tot} = R_{ch} + R_{sd}$。
+\begin{itemize}
+    \item \textbf{长沟道}：$R_{ch} \gg R_{sd}$，因此 $I_d$ 主要受沟道限制，$R_{sd}$ 可忽略。
+    \item \textbf{短沟道}：$R_{ch}$ 与 $R_{sd}$ 处于同一数量级。实验测得的 $I_d$ 是受 $R_{sd}$ 限制后的值。
+    \item \textbf{校准偏差}：如果不从 $V_{ds}$ 中扣除 $R_{sd}$ 上的压降，计算得到的“表现迁移率”（Apparent Mobility）会远低于真实迁移率。在 $V_{gs}$ 较高时，由于 $R_{ch}$ 减小，$R_{sd}$ 的占比进一步增加，导致迁移率曲线出现显著的假性下降。
+\end{itemize}
+
+\subsection{3. 速度饱和与非定域输运 (Non-local Transport)}
+短沟道器件即便在低 $V_{ds}$ 下，由于沟道极短，内部电场 $E \approx V_{ds}/L$ 依然可能很大。
+\begin{itemize}
+    \item \textbf{影响}：载流子发生速度饱和效应，迁移率随电场增加而减小。传统的 Split CV 假设载流子处于线性漂移区，忽略了速度饱和，这会导致校准出的低场迁移率偏低。
+\end{itemize}
+
+\subsection{4. 纵向电场增强导致的散射}
+为了抑制短沟道效应，短沟道器件通常具有超薄的等效氧化层厚度（EOT）和较高的衬底掺杂。
+\begin{itemize}
+    \item \textbf{影响}：这显著增加了垂直方向的有效电场 $E_{eff}$。增强的纵向电场会加剧界面粗糙度散射（Surface Roughness Scattering），使得短沟道器件的峰值迁移率本质上就低于长沟道器件，在校准时需要区分这是物理特性的改变还是测量误差。
+\end{itemize}
+
+\subsection{5. 量子限制效应 (Quantum Confinement)}
+短沟道先进工艺常采用高 $\kappa$ 介质和金属栅。
+\begin{itemize}
+    \item \textbf{影响}：电荷中心偏离界面（Centroid Shift），导致测得的 $C_{gc}$ 并非简单的 $C_{ox}$。如果不进行量子修正，提取的 $Q_{inv}$ 会存在系统误差，进而影响迁移率计算。
+\end{itemize}
+
+\section{实验报告建议}
+在分析中应指出：针对短沟道器件，必须采用多长度阵列法（$R_{tot}-L$ 法）提取确切的 $R_{sd}$ 和 $\Delta L$，并在计算 $\mu$ 之前对 $I_d$ 进行修正，否则 Split CV 提取的结果将失去物理参考价值。
+
+\end{document}

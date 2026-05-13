@@ -1,0 +1,92 @@
+
+\documentclass[11pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage{xeCJK}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{geometry}
+\usepackage{booktabs}
+\usepackage{xcolor}
+\usepackage{titlesec}
+\usepackage{fancyhdr}
+
+\geometry{left=2.5cm,right=2.5cm,top=3cm,bottom=3cm}
+\titleformat{\section}{\large\bfseries\color{blue!70!black}}{\thesection}{1em}{}
+
+\begin{document}
+
+\title{\textbf{实验报告思考题：CV 仿真计算原理与多端口 Y 矩阵}}
+\author{徐子翔}
+\date{\today}
+\maketitle
+
+\section{CV 仿真中的多端口网络建模}
+
+在 GTS Minimos-NT 等 TCAD 仿真工具中，器件的电容并非通过简单的准静态电荷求导 ($C = dQ/dV$) 获得，而是通过\textbf{AC 小信号分析}从多端口导纳矩阵（Admittance Matrix, Y矩阵）中提取的。这种方法能够更准确地捕捉非准静态效应和频率相关特性。
+
+对于一个 MOSFET 器件，通常被视为一个四端口网络（Gate, Drain, Source, Bulk）。在给定的 DC 工作点（Bias Point）上，向端口 $j$ 施加一个微小的正弦电压扰动 $\tilde{v}_j = \Delta V_j e^{j\omega t}$，在端口 $i$ 测量引起的小信号电流 $\tilde{i}_i$。
+
+\section{Y 矩阵与导纳定义}
+
+多端口系统的电流-电压关系可以表示为：
+\begin{equation}
+\begin{bmatrix}
+\tilde{i}_g \\
+\tilde{i}_d \\
+\tilde{i}_s \\
+\tilde{i}_b
+\end{bmatrix}
+=
+\begin{bmatrix}
+Y_{gg} & Y_{gd} & Y_{gs} & Y_{gb} \\
+Y_{dg} & Y_{dd} & Y_{ds} & Y_{db} \\
+Y_{sg} & Y_{sd} & Y_{ss} & Y_{sb} \\
+Y_{bg} & Y_{bd} & Y_{bs} & Y_{bb}
+\end{bmatrix}
+\begin{bmatrix}
+\tilde{v}_g \\
+\tilde{v}_d \\
+\tilde{v}_s \\
+\tilde{v}_b
+\end{bmatrix}
+\end{equation}
+
+其中每一个复导纳元素 $Y_{ij}$ 都可以分解为实部（电导 $G$）和虚部（电感或电容）：
+\begin{equation}
+Y_{ij} = G_{ij} + j\omega C_{ij}
+\end{equation}
+这里 $\omega = 2\pi f$ 是交流信号的角频率。
+
+\section{$C_{gg}$ 与 $C_{gd}$ 的提取原理}
+
+通过上述矩阵关系，我们可以精确定义电容分量：
+
+\subsection{1. 总栅极电容 $C_{gg}$ (Gate Self-Capacitance)}
+$C_{gg}$ 定义为当栅极电压变化时，栅极端口流入的总电荷变化率。它对应于 Y 矩阵中栅极端口的自导纳（Self-admittance）的虚部：
+\begin{equation}
+C_{gg} = \frac{\text{Im}(Y_{gg})}{\omega}
+\end{equation}
+在物理上，$C_{gg}$ 是所有跨导电容之和：$C_{gg} = C_{gs} + C_{gd} + C_{gb}$。它反映了栅极对整个器件沟道电荷的控制能力。
+
+\subsection{2. 栅漏反向传输电容 $C_{gd}$ (Gate-Drain Trans-capacitance)}
+$C_{gd}$ 反映了漏端电压变化在栅极引起的感应电荷变化。根据 Y 矩阵定义：
+\begin{equation}
+\tilde{i}_g = Y_{gg}\tilde{v}_g + Y_{gd}\tilde{v}_d + \dots
+\end{equation}
+当固定其他电极电压（$\tilde{v}_g=0, \tilde{v}_s=0, \tilde{v}_b=0$），仅在漏端施加扰动时：
+\begin{equation}
+C_{gd} = - \frac{\text{Im}(Y_{gd})}{\omega}
+\end{equation}
+\textbf{注意：} 互电容（Trans-capacitance）前通常带有负号，这是因为流入端口 $i$ 的电流是由另一端口电压升高导致的电荷重新分配引起的。
+
+\section{仿真计算流程简述}
+
+在 Minimos-NT 中，计算步骤如下：
+\begin{enumerate}
+    \item \textbf{DC 求解}：获得稳定的电势 $\psi$ 和载流子浓度 $n, p$ 分布。
+    \item \textbf{线性化求解}：对半导体基本方程（泊松方程、连续性方程）进行 Fréchet 微分，建立小信号系统矩阵。
+    \item \textbf{AC 扰动}：在指定频率下求解线性方程组，直接得到各端口电流响应。
+    \item \textbf{参数提取}：通过 $C_{ij} = \text{Im}(Y_{ij})/\omega$ 输出电容值。
+\end{enumerate}
+
+\end{document}
